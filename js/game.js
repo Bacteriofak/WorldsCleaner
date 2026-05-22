@@ -17,8 +17,8 @@ const game = {
     cameraX: 0, cameraY: 0,
     cameraVX: 0, cameraVY: 0,
     cameraScale: 1, cameraTargetScale: 1,
-    MIN_SCALE: 0.35,
-    START_SCALE: 1,
+    MIN_SCALE: 0.38,
+    START_SCALE: 1.9,
     EDGE_SCROLL_MARGIN: 20,
     prevZoomStep: -1,
 
@@ -54,8 +54,8 @@ const game = {
         this.ingameXP = 0; this.ingameNext = 300; this.time = 0;
         this.cameraScale = this.START_SCALE;
         this.cameraTargetScale = this.START_SCALE;
-        this.cameraX = canvas.width / 2;
-        this.cameraY = canvas.height / 2;
+        this.cameraX = this.WORLD_W / 2;
+        this.cameraY = this.WORLD_H / 2;
         this.cameraVX = 0; this.cameraVY = 0;
         this.prevZoomStep = -1;
         this.items = []; this.particles = []; this.bgParticles = [];
@@ -194,8 +194,17 @@ const game = {
         this.cameraVX += (scrollDX * scrollSpeed - this.cameraVX) * 0.12;
         this.cameraVY += (scrollDY * scrollSpeed - this.cameraVY) * 0.12;
 
-        this.cameraX = Math.max(w / 2, Math.min(this.WORLD_W - w / 2, this.cameraX + this.cameraVX));
-        this.cameraY = Math.max(h / 2, Math.min(this.WORLD_H - h / 2, this.cameraY + this.cameraVY));
+        // ─── Clamp camera position with scale consideration ──
+        const cs = this.cameraScale;
+        const visibleWidth = w / cs;
+        const visibleHeight = h / cs;
+        const minCamX = visibleWidth / 2;
+        const maxCamX = this.WORLD_W - visibleWidth / 2;
+        const minCamY = visibleHeight / 2;
+        const maxCamY = this.WORLD_H - visibleHeight / 2;
+
+        this.cameraX = Math.max(minCamX, Math.min(maxCamX, this.cameraX + this.cameraVX));
+        this.cameraY = Math.max(minCamY, Math.min(maxCamY, this.cameraY + this.cameraVY));
 
         // ─── World mouse ──────────────────────────────────────
         const world = this.screenToWorld(mx, my);
@@ -203,12 +212,9 @@ const game = {
         this.worldMouse.y = world.y;
 
         // ─── Zoom camera out as player progresses ──────────
-        const progress = this.goal > 0 ? this.xp / this.goal : 0;
-        const zoomStep = Math.min(3, Math.floor(progress / 0.25));
-        if (zoomStep !== this.prevZoomStep) {
-            this.prevZoomStep = zoomStep;
-            this.cameraTargetScale = Math.max(this.MIN_SCALE, this.START_SCALE - zoomStep * 0.22);
-        }
+        const progress = this.goal > 0 ? Math.min(1, this.xp / this.goal) : 0;
+        // Smooth zoom from START_SCALE to MIN_SCALE based on progress
+        this.cameraTargetScale = this.START_SCALE - (this.START_SCALE - this.MIN_SCALE) * progress;
         this.cameraScale += (this.cameraTargetScale - this.cameraScale) * 0.04;
 
         // ─── Bg particles ─────────────────────────────────────
