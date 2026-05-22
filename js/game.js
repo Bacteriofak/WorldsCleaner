@@ -226,9 +226,9 @@ const game = {
         }
 
         // ─── Items culling ────────────────────────────────────
-        const cs = this.cameraScale;
-        const hw = (w / cs) / 2 + 150;
-        const hh = (h / cs) / 2 + 150;
+        const camScale = this.cameraScale;
+        const hw = (w / camScale) / 2 + 150;
+        const hh = (h / camScale) / 2 + 150;
         const visLeft = this.cameraX - hw;
         const visRight = this.cameraX + hw;
         const visTop = this.cameraY - hh;
@@ -258,11 +258,11 @@ const game = {
 
     render() {
         const cw = canvas.width, ch = canvas.height;
-        const cs = this.cameraScale;
+        const camScale = this.cameraScale;
 
         // ─── Update vacuum indicator size with camera scale ────
         // Keep vacuum radius visually proportional as camera zooms out
-        const vacuumScreenRadius = (this.stats.rad * 2) / cs;
+        const vacuumScreenRadius = (this.stats.rad * 2) / camScale;
         vInd.style.width = vacuumScreenRadius + 'px';
         vInd.style.height = vacuumScreenRadius + 'px';
 
@@ -276,7 +276,7 @@ const game = {
         // ─── Шаг 2: camera transform ─────────────────────────
         ctx.save();
         ctx.translate(cw / 2, ch / 2);
-        ctx.scale(cs, cs);
+        ctx.scale(camScale, camScale);
         ctx.translate(-this.cameraX, -this.cameraY);
 
         if (this.shake > 0.5) ctx.translate(
@@ -295,8 +295,8 @@ const game = {
         ctx.drawImage(getGrid(this.WORLD_W, this.WORLD_H), 0, 0);
 
         // Visible bounds for culling
-        const hw = (cw / cs) / 2 + 50;
-        const hh = (ch / cs) / 2 + 50;
+        const hw = (cw / camScale) / 2 + 50;
+        const hh = (ch / camScale) / 2 + 50;
         const visLeft = this.cameraX - hw;
         const visRight = this.cameraX + hw;
         const visTop = this.cameraY - hh;
