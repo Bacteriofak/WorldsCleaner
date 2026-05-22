@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trash Flow - Prestige Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Global mesh -->
+    <div id="bg-mesh">
+        <div class="blob b1"></div>
+        <div class="blob b2"></div>
+        <div class="blob b3"></div>
+        <div class="blob b4"></div>
+    </div>
+
+    <!-- Per-screen meshes -->
+    <div id="mesh-worlds" class="screen-mesh"><div class="mesh-blob"></div><div class="mesh-blob"></div></div>
+    <div id="mesh-tech" class="screen-mesh" style="display:none;"><div class="mesh-blob"></div><div class="mesh-blob"></div></div>
+    <div id="mesh-achievements" class="screen-mesh" style="display:none;"><div class="mesh-blob"></div><div class="mesh-blob"></div></div>
+    <div id="mesh-top" class="screen-mesh" style="display:none;"><div class="mesh-blob"></div><div class="mesh-blob"></div></div>
+    <div id="mesh-options" class="screen-mesh" style="display:none;"><div class="mesh-blob"></div><div class="mesh-blob"></div></div>
+
+    <canvas id="gameCanvas"></canvas>
+    <div id="vacuum-indicator"></div>
+
+    <div id="ui-layer">
+        <header id="main-header">
+            <div class="logo">✦ TRASH FLOW ✦</div>
+            <div class="currency">🪙 <span id="global-scrap">0</span></div>
+        </header>
+
+        <div id="combo-txt">X2!</div>
+
+        <!-- SCREEN: WORLDS -->
+        <div id="screen-worlds" class="screen active">
+            <div class="screen-scroll" style="justify-content: center;">
+                <h2 class="section-title">✦ Миссии ✦</h2>
+                <div id="world-wrapper">
+                    <div id="world-container">
+                        <div class="world-card" id="card-abyss">
+                            <div class="sector-badge">СЕКТОР <span id="tag-lvl-abyss">1</span></div>
+                            <div class="world-emoji" style="font-size: 100px; filter: drop-shadow(0 0 20px rgba(0,242,255,0.3));">🌊</div>
+                            <h3 style="font-size: 22px; letter-spacing: 4px;">БЕЗДНА</h3>
+                            <button class="btn btn-play start-btn" data-world="abyss" style="width: 100%;">ИГРАТЬ</button>
+                        </div>
+                        <div class="world-card locked" id="card-micro">
+                            <div class="lock-overlay">🔒 НУЖЕН LVL 3</div>
+                            <div class="world-emoji" style="font-size: 100px; filter: grayscale(0.5);">🦠</div>
+                            <h3 style="font-size: 22px; letter-spacing: 4px;">МИКРОМИР</h3>
+                            <button class="btn" disabled>ЗАКРЫТО</button>
+                        </div>
+                        <div class="world-card locked" id="card-space">
+                            <div class="lock-overlay">🔒 НУЖЕН LVL 7</div>
+                            <div class="world-emoji" style="font-size: 100px; filter: grayscale(0.5);">🚀</div>
+                            <h3 style="font-size: 22px; letter-spacing: 4px;">КОСМОС</h3>
+                            <button class="btn" disabled>ЗАКРЫТО</button>
+                        </div>
+                    </div>
+                </div>
+                <p style="opacity: 0.25; font-size: 12px; margin-top: 15px; letter-spacing: 2px;">← Листайте для выбора →</p>
+            </div>
+        </div>
+
+        <!-- SCREEN: TECH TREE -->
+        <div id="screen-tech" class="screen">
+            <div class="screen-scroll">
+                <h2 class="section-title">✦ Технологии ✦</h2>
+                <div class="tech-wrapper">
+                    <div class="tech-scroll" id="tech-tree-content"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AD button — fixed globally, shown/hidden by JS -->
+        <button class="btn-ad" id="btn-ad-global" style="position:fixed;top:95px;right:20px;z-index:55;display:none;">🎁 +500 МОНЕТ ЗА AD</button>
+
+        <!-- SCREEN: ACHIEVEMENTS -->
+        <div id="screen-achievements" class="screen">
+            <div class="screen-scroll" style="justify-content: center;">
+                <h2 class="section-title">✦ Призы ✦</h2>
+                <div id="ach-list" class="glass-panel" style="margin-bottom: 0;"></div>
+            </div>
+        </div>
+
+        <!-- SCREEN: STATUS -->
+        <div id="screen-top" class="screen">
+            <div class="screen-scroll" style="justify-content: center;">
+                <h2 class="section-title">✦ Статус ✦</h2>
+                <div class="glass-panel" style="text-align: center;">
+                    <div style="font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 3px;">Аккаунт</div>
+                    <div style="font-size: 100px; font-weight: 900; background: linear-gradient(135deg, var(--accent), #ff9900); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1;" id="total-lvl-ui">1</div>
+                    <div style="width: 60%; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent); margin: 30px auto;"></div>
+                    <div style="font-size: 14px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 3px;">Рекорд Скрапа</div>
+                    <div style="font-size: 48px; font-weight: 900; color: var(--primary); text-shadow: 0 0 20px rgba(0,242,255,0.3);" id="best-score-ui">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN: OPTIONS -->
+        <div id="screen-options" class="screen">
+            <div class="screen-scroll" style="justify-content: center;">
+                <h2 class="section-title">✦ Настройки ✦</h2>
+                <div class="glass-panel" style="margin-bottom: 0;">
+                    <button class="item-card sfx-toggle" style="cursor: pointer; background: rgba(255,255,255,0.02);">
+                        <div style="text-align: left;"><b style="font-size: 18px;">Звуковые эффекты</b><br><small id="sfx-status" style="color: var(--text-dim);">ВКЛЮЧЕНО</small></div>
+                        <span class="icon-big" id="sfx-icon">🔊</span>
+                    </button>
+                    <button class="item-card music-toggle" style="cursor: pointer; background: rgba(255,255,255,0.02); margin-top: 15px;">
+                        <div style="text-align: left;"><b style="font-size: 18px;">Музыка</b><br><small id="music-status" style="color: var(--text-dim);">ВКЛЮЧЕНО</small></div>
+                        <span class="icon-big" id="music-icon">🎵</span>
+                    </button>
+                    <button class="item-card" id="btn-reset-progress" style="cursor: pointer; background: rgba(255,0,85,0.08); border-color: rgba(255,0,85,0.3); margin-top: 25px;">
+                        <div style="text-align: left;"><b style="font-size: 18px;">🗑️ Сброс прогресса</b><br><small style="color: var(--text-dim);">Удалить все сохранения</small></div>
+                        <span style="font-size: 24px;">⚠️</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM NAV -->
+        <div id="nav-outer">
+            <nav>
+                <button class="nav-tab active" data-target="worlds"><span class="icon">🎮</span></button>
+                <button class="nav-tab" data-target="tech"><span class="icon">🧬</span></button>
+                <button class="nav-tab" data-target="achievements"><span class="icon">🌟</span></button>
+                <button class="nav-tab" data-target="top"><span class="icon">🏆</span></button>
+                <button class="nav-tab" data-target="options"><span class="icon">⚙️</span></button>
+            </nav>
+        </div>
+
+        <!-- HUD -->
+        <div id="hud">
+            <div class="hud-panel">
+                <div class="hud-xp-text">
+                    <span>ЦЕЛЬ: <span id="hud-xp">0</span>/<span id="hud-goal">20</span></span>
+                    <span>🪙 <span id="hud-scrap">0</span></span>
+                </div>
+                <div class="xp-bar"><div id="xp-fill"></div></div>
+            </div>
+            <button id="btn-pause-game">⚙️</button>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    <div id="pause-modal" class="modal"><div class="modal-content">
+        <h2 style="font-size: 36px; margin-top: 0; color: var(--primary);">⏸ ПАУЗА</h2>
+        <button class="item-card sfx-toggle" style="background: none; border: 1px solid var(--glass-border); color: #fff; margin-bottom: 25px; cursor: pointer;">Звук: <span class="status">ВКЛ</span></button>
+        <button class="btn btn-play" id="btn-resume" style="width:100%; margin-bottom: 15px;">ПРОДОЛЖИТЬ</button>
+        <button class="btn" id="btn-quit" style="width:100%; background: rgba(255,255,255,0.05); box-shadow: none; color: var(--text-dim);">В МЕНЮ</button>
+    </div></div>
+
+    <div id="rogue-modal" class="modal"><div class="modal-content">
+        <h2 style="color: var(--primary); margin-top: 0;">⚡ БОНУС!</h2>
+        <p style="color: var(--text-dim); margin-bottom: 25px;">Выберите временное усиление</p>
+        <div id="rogue-list" style="display:flex; flex-direction:column; gap:12px;"></div>
+    </div></div>
+
+    <div id="win-modal" class="modal"><div class="modal-content">
+        <h2 style="color: var(--accent); font-size: 36px; margin-top: 0;">🏆 ПОБЕДА!</h2>
+        <p style="color: var(--text-dim); margin-bottom: 5px;">Собрано скрапа</p>
+        <div style="font-size: 64px; font-weight: 900; background: linear-gradient(135deg, var(--accent), #ff9900); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 10px 0;" id="win-scrap-total">0</div>
+        <button class="btn btn-play" id="btn-double" style="width:100%; margin-bottom: 15px;">📺 УДВОИТЬ (x2)</button>
+        <button class="btn" id="btn-finish" style="width:100%; background: rgba(255,255,255,0.05); box-shadow: none; color: var(--text-dim);">ЗАБРАТЬ</button>
+    </div></div>
+
+    <!-- JS scripts (order matters!) -->
+    <script src="js/texture-cache.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
