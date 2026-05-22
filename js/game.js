@@ -22,12 +22,7 @@ const game = {
     EDGE_SCROLL_MARGIN: 20,
     prevZoomStep: -1,
 
-    // Видимые границы мира — расширяются при зуммировании
-    worldViewLeft: 0, worldViewRight: 0,
-    worldViewTop: 0, worldViewBottom: 0,
-    // На старте видим только экран
-    viewExpandTarget: 0,   // 0 = экран, 1 = весь мир
-    viewExpandCurrent: 0,
+
 
     prepare(wK) {
         this.worldKey = wK;
@@ -64,15 +59,6 @@ const game = {
         this.cameraVX = 0; this.cameraVY = 0;
         this.prevZoomStep = -1;
         this.items = []; this.particles = []; this.bgParticles = [];
-
-        // Видимые границы мира: стартуем с размера экрана
-        const cw = canvas.width, ch = canvas.height;
-        this.viewExpandCurrent = 0;
-        this.viewExpandTarget = 0;
-        this.worldViewLeft = 0;
-        this.worldViewTop = 0;
-        this.worldViewRight = cw;
-        this.worldViewBottom = ch;
 
         Item._speedMult = 1;
 
@@ -119,6 +105,7 @@ const game = {
         document.getElementById('hud-goal').innerText = this.goal;
         document.getElementById('hud-scrap').innerText = Math.floor(this.sessionScrap);
         document.getElementById('xp-fill').style.width = (this.xp / this.goal * 100) + '%';
+        // Initial vacuum indicator size (will be scaled by camera in render)
         vInd.style.width = (this.stats.rad * 2) + 'px';
         vInd.style.height = (this.stats.rad * 2) + 'px';
     },
@@ -215,24 +202,14 @@ const game = {
         this.worldMouse.x = world.x;
         this.worldMouse.y = world.y;
 
-        // ─── Zoom + expand view ────────────────────────────
+        // ─── Zoom camera out as player progresses ──────────
         const progress = this.goal > 0 ? this.xp / this.goal : 0;
         const zoomStep = Math.min(3, Math.floor(progress / 0.25));
         if (zoomStep !== this.prevZoomStep) {
             this.prevZoomStep = zoomStep;
             this.cameraTargetScale = Math.max(this.MIN_SCALE, this.START_SCALE - zoomStep * 0.22);
-            // Расширяем видимые границы мира
-            this.viewExpandTarget = Math.min(1, zoomStep / 3);
         }
         this.cameraScale += (this.cameraTargetScale - this.cameraScale) * 0.04;
-        this.viewExpandCurrent += (this.viewExpandTarget - this.viewExpandCurrent) * 0.04;
-
-        // Вычисляем видимые границы мира (от экрана до всего мира)
-        const cw = canvas.width, ch = canvas.height;
-        this.worldViewLeft = Math.floor((this.WORLD_W - cw) * this.viewExpandCurrent * 0.5);
-        this.worldViewTop = Math.floor((this.WORLD_H - ch) * this.viewExpandCurrent * 0.5);
-        this.worldViewRight = this.WORLD_W - this.worldViewLeft;
-        this.worldViewBottom = this.WORLD_H - this.worldViewTop;
 
         // ─── Bg particles ─────────────────────────────────────
         for (let i = 0; i < this.bgParticles.length; i++) {
@@ -277,6 +254,12 @@ const game = {
         const cw = canvas.width, ch = canvas.height;
         const cs = this.cameraScale;
 
+        // ─── Update vacuum indicator size with camera scale ────
+        // Keep vacuum radius visually proportional as camera zooms out
+        const vacuumScreenRadius = (this.stats.rad * 2) / cs;
+        vInd.style.width = vacuumScreenRadius + 'px';
+        vInd.style.height = vacuumScreenRadius + 'px';
+
         // ─── Шаг 1: заливаем весь экран чёрным ──────────────
         ctx.save();
         ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -295,11 +278,9 @@ const game = {
             (Math.random() - 0.5) * this.shake
         );
 
-        // ─── Шаг 3: обрезаем рендер до видимых границ мира ──
+        // ─── Шаг 3: clip rendering to world bounds only ──────
         ctx.beginPath();
-        ctx.rect(this.worldViewLeft, this.worldViewTop,
-                 this.worldViewRight - this.worldViewLeft,
-                 this.worldViewBottom - this.worldViewTop);
+        ctx.rect(0, 0, this.WORLD_W, this.WORLD_H);
         ctx.clip();
 
         // ─── Шаг 4: рисуем мир ───────────────────────────────
